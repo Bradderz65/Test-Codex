@@ -33,7 +33,9 @@
               {% if photo.caption %}
                 <p class="caption">{{ photo.caption }}</p>
               {% endif %}
-              <time datetime="{{ photo.uploaded_at }}">{{ photo.uploaded_at | replace('T', ' ')[:16] }}</time>
+              {% if photo.uploaded_at %}
+                <time datetime="{{ photo.uploaded_at }}">{{ photo.display_time }}</time>
+              {% endif %}
             </div>
           </article>
         {% endfor %}

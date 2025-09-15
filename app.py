@@ -128,9 +128,31 @@ def auto_commit(paths: List[Path], message: str) -> None:
 
 @app.route("/")
 def index():
-    photos = get_photos()
-    photos.sort(key=lambda item: item.get("uploaded_at", ""), reverse=True)
-    return render_template("index.html", photos=photos)
+    def _display_time(raw_value: str | None) -> str:
+        if not raw_value:
+            return ""
+
+        value = str(raw_value)
+        try:
+            parsed = datetime.fromisoformat(value)
+            return parsed.strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            cleaned = value.replace("T", " ")
+            if "." in cleaned:
+                cleaned = cleaned.split(".", 1)[0]
+            return cleaned
+
+    sorted_photos = sorted(
+        get_photos(), key=lambda item: item.get("uploaded_at", ""), reverse=True
+    )
+    enriched_photos = [
+        {
+            **photo,
+            "display_time": _display_time(photo.get("uploaded_at")),
+        }
+        for photo in sorted_photos
+    ]
+    return render_template("index.html", photos=enriched_photos)
 
 
 @app.route("/register", methods=["GET", "POST"])
