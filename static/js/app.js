@@ -18,4 +18,14 @@ document.addEventListener('DOMContentLoaded', () => {
       flash.addEventListener('transitionend', () => flash.remove(), { once: true });
     }, 4200);
   });
+
+  const confirmForms = document.querySelectorAll('form[data-confirm]');
+  confirmForms.forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      const message = form.dataset.confirm || 'Are you sure?';
+      if (!window.confirm(message)) {
+        event.preventDefault();
+      }
+    });
+  });
 });

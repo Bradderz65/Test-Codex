@@ -7,6 +7,7 @@ from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from typing import Dict, List
+from uuid import uuid4
 
 from flask import (
     Flask,
@@ -66,7 +67,18 @@ def save_users(users: Dict[str, Dict[str, str]]) -> None:
 
 def get_photos() -> List[Dict[str, str]]:
     data = _read_json(DATA_DIR / "photos.json", {"photos": []})
-    return data.get("photos", [])
+    photos = data.get("photos", [])
+
+    updated = False
+    for photo in photos:
+        if "id" not in photo:
+            photo["id"] = uuid4().hex
+            updated = True
+
+    if updated:
+        save_photos(photos)
+
+    return photos
 
 
 def save_photos(photos: List[Dict[str, str]]) -> None:
@@ -75,6 +87,21 @@ def save_photos(photos: List[Dict[str, str]]) -> None:
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def format_timestamp(raw_value: str | None) -> str:
+    if not raw_value:
+        return ""
+
+    value = str(raw_value)
+    try:
+        parsed = datetime.fromisoformat(value)
+        return parsed.strftime("%Y-%m-%d %H:%M")
+    except ValueError:
+        cleaned = value.replace("T", " ")
+        if "." in cleaned:
+            cleaned = cleaned.split(".", 1)[0]
+        return cleaned
 
 
 def current_username() -> str | None:
@@ -128,27 +155,13 @@ def auto_commit(paths: List[Path], message: str) -> None:
 
 @app.route("/")
 def index():
-    def _display_time(raw_value: str | None) -> str:
-        if not raw_value:
-            return ""
-
-        value = str(raw_value)
-        try:
-            parsed = datetime.fromisoformat(value)
-            return parsed.strftime("%Y-%m-%d %H:%M")
-        except ValueError:
-            cleaned = value.replace("T", " ")
-            if "." in cleaned:
-                cleaned = cleaned.split(".", 1)[0]
-            return cleaned
-
     sorted_photos = sorted(
         get_photos(), key=lambda item: item.get("uploaded_at", ""), reverse=True
     )
     enriched_photos = [
         {
             **photo,
-            "display_time": _display_time(photo.get("uploaded_at")),
+            "display_time": format_timestamp(photo.get("uploaded_at")),
         }
         for photo in sorted_photos
     ]
@@ -217,6 +230,9 @@ def logout():
 @app.route("/upload", methods=["GET", "POST"])
 @login_required
 def upload():
+    username = current_username()
+    assert username is not None
+
     if request.method == "POST":
         uploaded = request.files.get("photo")
         caption = request.form.get("caption", "").strip()
@@ -227,9 +243,6 @@ def upload():
         if not allowed_file(uploaded.filename):
             flash("Unsupported file type.", "danger")
             return redirect(url_for("upload"))
-
-        username = current_username()
-        assert username is not None
 
         user_dir = UPLOADS_DIR / username
         user_dir.mkdir(parents=True, exist_ok=True)
@@ -242,6 +255,7 @@ def upload():
 
         photos = get_photos()
         photo_entry = {
+            "id": uuid4().hex,
             "user": username,
             "caption": caption,
             "static_path": str(Path("uploads") / username / stored_name).replace(os.sep, "/"),
@@ -255,7 +269,53 @@ def upload():
         flash("Photo uploaded successfully!", "success")
         return redirect(url_for("index"))
 
-    return render_template("upload.html")
+    user_photos = [
+        {
+            **photo,
+            "display_time": format_timestamp(photo.get("uploaded_at")),
+        }
+        for photo in get_photos()
+        if photo.get("user") == username
+    ]
+    user_photos.sort(key=lambda item: item.get("uploaded_at", ""), reverse=True)
+
+    return render_template("upload.html", user_photos=user_photos)
+
+
+@app.post("/photos/<photo_id>/delete")
+@login_required
+def delete_photo(photo_id: str):
+    username = current_username()
+    assert username is not None
+
+    photos = get_photos()
+    target = next((photo for photo in photos if photo.get("id") == photo_id), None)
+
+    if not target:
+        flash("That photo could not be found.", "warning")
+        return redirect(url_for("upload"))
+
+    if target.get("user") != username:
+        flash("You can only delete photos you uploaded.", "danger")
+        return redirect(url_for("upload"))
+
+    static_rel = target.get("static_path")
+    file_path: Path | None = None
+    if static_rel:
+        file_path = BASE_DIR / "static" / Path(static_rel)
+        if file_path.exists():
+            file_path.unlink()
+
+    updated_photos = [photo for photo in photos if photo.get("id") != photo_id]
+    save_photos(updated_photos)
+
+    paths_to_commit = [DATA_DIR / "photos.json"]
+    if file_path is not None:
+        paths_to_commit.append(file_path)
+    auto_commit(paths_to_commit, f"Remove photo by {username}")
+
+    flash("Photo deleted.", "info")
+    return redirect(url_for("upload"))
 
 
 @app.errorhandler(413)

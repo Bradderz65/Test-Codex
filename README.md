@@ -8,6 +8,7 @@ Aurora Gallery is a compact photo sharing website built with Flask. It lets mult
 - 🖼️ Image uploads (PNG, JPG, GIF, WEBP up to 10&nbsp;MB) with optional captions.
 - 🗂️ Automatic organisation per user inside `static/uploads/`.
 - 💾 Metadata persisted in `data/*.json` so the gallery repopulates after a restart.
+- 🧹 Personal dashboard to review and delete the photos you've shared.
 - 🪄 Minimal, animated UI designed for fast navigation.
 - 🧬 Optional Git auto-commit and push so new photos land in GitHub.
 
