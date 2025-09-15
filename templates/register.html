@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Join · Aurora Gallery{% endblock %}
+
+{% block content %}
+  <section class="auth-card">
+    <h1>Create your account</h1>
+    <p class="subtitle">Sign up to start sharing radiant memories.</p>
+    <form method="post" class="form">
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" autocomplete="username" required />
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" required />
+
+      <label for="confirm">Confirm password</label>
+      <input id="confirm" name="confirm" type="password" autocomplete="new-password" required />
+
+      <button type="submit" class="button full">Create account</button>
+    </form>
+    <p class="switch">Already a member? <a href="{{ url_for('login') }}">Log in</a>.</p>
+  </section>
+{% endblock %}

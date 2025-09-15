@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Aurora Gallery{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1>Keep your memories in the light.</h1>
+    <p>Share luminous snapshots with the community and watch them glow in the gallery.</p>
+    {% if current_username %}
+      <a class="button" href="{{ url_for('upload') }}">Upload a photo</a>
+    {% else %}
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('register') }}">Create account</a>
+        <a class="button ghost" href="{{ url_for('login') }}">Log in</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="gallery">
+    <div class="gallery-header">
+      <h2>Latest photos</h2>
+      <span class="gallery-count">{{ photos|length }} shared moment{% if photos|length != 1 %}s{% endif %}</span>
+    </div>
+    {% if photos %}
+      <div class="gallery-grid">
+        {% for photo in photos %}
+          <article class="gallery-card">
+            <div class="card-image">
+              <img src="{{ url_for('static', filename=photo.static_path) }}" alt="Photo by {{ photo.user }}" loading="lazy" />
+            </div>
+            <div class="card-meta">
+              <span class="author">@{{ photo.user }}</span>
+              {% if photo.caption %}
+                <p class="caption">{{ photo.caption }}</p>
+              {% endif %}
+              <time datetime="{{ photo.uploaded_at }}">{{ photo.uploaded_at | replace('T', ' ')[:16] }}</time>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty">No photos yet. Be the first to share something beautiful.</p>
+    {% endif %}
+  </section>
+{% endblock %}

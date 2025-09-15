@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Upload · Aurora Gallery{% endblock %}
+
+{% block content %}
+  <section class="upload-card">
+    <h1>Share a new photo</h1>
+    <p class="subtitle">We support PNG, JPG, GIF and WEBP up to 10 MB.</p>
+    <form method="post" enctype="multipart/form-data" class="form">
+      <label for="photo" class="file-label">
+        <input id="photo" name="photo" type="file" accept="image/*" required />
+        <span class="file-cta">Choose an image</span>
+        <span class="file-chosen">No file selected</span>
+      </label>
+
+      <label for="caption">Caption <span class="muted">(optional)</span></label>
+      <input id="caption" name="caption" type="text" maxlength="120" placeholder="Add a short caption" />
+
+      <button type="submit" class="button full">Upload photo</button>
+    </form>
+  </section>
+{% endblock %}
