@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Upload · Aurora Gallery{% endblock %}
+
+{% block content %}
+  <section class="upload-card">
+    <h1>Share a new photo</h1>
+    <p class="subtitle">We support PNG, JPG, GIF and WEBP up to 10 MB.</p>
+    <form method="post" enctype="multipart/form-data" class="form">
+      <label for="photo" class="file-label">
+        <input id="photo" name="photo" type="file" accept="image/*" required />
+        <span class="file-cta">Choose an image</span>
+        <span class="file-chosen">No file selected</span>
+      </label>
+
+      <label for="caption">Caption <span class="muted">(optional)</span></label>
+      <input id="caption" name="caption" type="text" maxlength="120" placeholder="Add a short caption" />
+
+      <button type="submit" class="button full">Upload photo</button>
+    </form>
+  </section>
+
+  <section class="manage-photos">
+    <div class="manage-header">
+      <h2>Your uploads</h2>
+      <span class="muted">{{ user_photos|length }} photo{% if user_photos|length != 1 %}s{% endif %}</span>
+    </div>
+
+    {% if user_photos %}
+      <div class="manage-grid">
+        {% for photo in user_photos %}
+          <article class="manage-card">
+            <div class="manage-image">
+              <img src="{{ url_for('static', filename=photo.static_path) }}" alt="Uploaded photo" loading="lazy" />
+            </div>
+            <div class="manage-body">
+              {% if photo.caption %}
+                <p class="caption">{{ photo.caption }}</p>
+              {% endif %}
+              {% if photo.display_time %}
+                <time datetime="{{ photo.uploaded_at }}">Uploaded {{ photo.display_time }}</time>
+              {% endif %}
+              <form method="post" action="{{ url_for('delete_photo', photo_id=photo.id) }}" class="delete-form" data-confirm="Delete this photo?">
+                <button type="submit" class="button danger">Delete photo</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty">You haven't uploaded anything yet. Once you do, they'll appear here for quick management.</p>
+    {% endif %}
+  </section>
+{% endblock %}
